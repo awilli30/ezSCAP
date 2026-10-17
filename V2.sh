@@ -101,12 +101,9 @@ if [[ "$MODE_CHOICE" == "2" ]]; then
 fi
 echo -e "|-------------------------|-------|"
 
-# 8. Print CCE Numbers for Failed Results
+# 8. Print CCE Numbers for Failed Results Only
 if [[ "$FAILED_COUNT" -gt 0 ]]; then
-    echo -e "\n${RED}Failed Rules & CCE Numbers:${NC}"
-    echo -e "|--------------------------------------------------------|-----------------|"
-    echo -e "| Rule ID                                                | CCE Number      |"
-    echo -e "|--------------------------------------------------------|-----------------|"
+    echo -e "\n${RED}Failed CCE Numbers:${NC}"
     python3 - "$XML_PATH" << 'EOF'
 import sys
 import xml.etree.ElementTree as ET
@@ -120,19 +117,13 @@ try:
         if elem.tag.endswith('rule-result'):
             result_elem = elem.find('{*}result')
             if result_elem is not None and result_elem.text == 'fail':
-                rule_id = elem.get('idref', 'N/A')
-                cce = "N/A"
                 for ident in elem.iter():
                     if ident.tag.endswith('ident'):
                         sys_attr = ident.get('system', '')
                         if 'cce' in sys_attr.lower() or (ident.text and 'CCE-' in ident.text):
-                            cce = ident.text.strip()
+                            print(ident.text.strip())
                             break
-                print(f"| {rule_id:<54} | {cce:<15} |")
 except Exception as e:
-    print(f"Error parsing XML: {e}", file=sys.stderr)
+    pass
 EOF
-    echo -e "+--------------------------------------------------------+-----------------"
 fi
-
-echo "Done."
