@@ -22,7 +22,7 @@ cat << "EOF"
  | |__     / /| (___ | |      / _ \ | |_) |
  |  __|   / /  \___ \| |     / ___ \|  __/
  | |____ / /__ ____) | |____/ /   \ \ |   
- |______|/____|_____/ \______/     \_\   
+ |______|_____|_____/ \______/     \_\|   
 EOF
 echo -e "${NC}"
 
@@ -91,14 +91,39 @@ FAILED_COUNT=$(grep -c '<result>fail</result>' "$XML_PATH" || true)
 FIXED_COUNT=$(grep -c '<result>fixed</result>' "$XML_PATH" || true)
 
 # 7. Formatted Summary Table
-echo -e "\n+-------------------------+-------+"
+echo -e "\n|-------------------------|-------|"
 echo -e "| Check Status            | Count |"
-echo -e "+-------------------------+-------+"
+echo -e "|-------------------------|-------|"
 printf "| Passed                  | %-5s |\n" "$(echo -e "${GREEN}${PASSED_COUNT}${NC}")"
 printf "| Failed                  | %-5s |\n" "$(echo -e "${RED}${FAILED_COUNT}${NC}")"
 if [[ "$MODE_CHOICE" == "2" ]]; then
     printf "| Fixed                   | %-5s |\n" "$(echo -e "${BLUE}${FIXED_COUNT}${NC}")"
 fi
-echo -e "+-------------------------+-------+"
+echo -e "|-------------------------|-------|"
 
-echo "Done."
+# 8. Print CCE Numbers for Failed Results Only
+if [[ "$FAILED_COUNT" -gt 0 ]]; then
+    echo -e "\n${RED}Failed CCE Numbers:${NC}"
+    python3 - "$XML_PATH" << 'EOF'
+import sys
+import xml.etree.ElementTree as ET
+
+xml_path = sys.argv[1]
+try:
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    
+    for elem in root.iter():
+        if elem.tag.endswith('rule-result'):
+            result_elem = elem.find('{*}result')
+            if result_elem is not None and result_elem.text == 'fail':
+                for ident in elem.iter():
+                    if ident.tag.endswith('ident'):
+                        sys_attr = ident.get('system', '')
+                        if 'cce' in sys_attr.lower() or (ident.text and 'CCE-' in ident.text):
+                            print(ident.text.strip())
+                            break
+except Exception as e:
+    pass
+EOF
+fi
