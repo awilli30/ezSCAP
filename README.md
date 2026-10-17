@@ -12,4 +12,6 @@ NOTE: OpenSCAP needs to be downloaded before using AutoSCAP
 
 Command to get OpenSCAP: sudo dnf install openscap-scanner scap-security-guide
 
+Edit file permissions to run script: chmod u + x exSCAP.sh
+
 curl -0 https://raw.githubusercontent.com/grayteamtech/ezSCAP/refs/heads/main/ezSCAP.sh
